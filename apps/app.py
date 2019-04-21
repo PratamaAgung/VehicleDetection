@@ -24,6 +24,11 @@ class App:
 
         self.play_video_button = tkinter.Button(text="Play", command=self.play_video)
         self.play_video_button.grid(row=0, column=2)
+        self.video = None
+
+        self.pause_video_button = tkinter.Button(text="Pause", command=self.pause_video)
+        self.pause_video_button.grid(row=0, column=3)
+        self.is_paused = False
 
         self.video_canvas = tkinter.Label(image=None)
         self.video_canvas.grid(row=1, column=0)
@@ -40,27 +45,36 @@ class App:
         return self.video_path_label.get(1.0, tkinter.END)
 
     def play_video(self):
-        file_name = self.get_video_path()
-        self.video = cv2.VideoCapture(file_name[:-1])
-        if not self.video.isOpened():
-            raise ValueError("Unable to open video source", file_name)
-        
-        self.play_thread = threading.Thread(target=self.thread_play_video, args=())
-        self.play_thread.start()
+        if not self.video:
+            file_name = self.get_video_path()
+            self.video = cv2.VideoCapture(file_name[:-1])
+            if not self.video.isOpened():
+                raise ValueError("Unable to open video source", file_name)
+            
+            self.play_thread = threading.Thread(target=self.thread_play_video, args=())
+            self.play_thread.start()
+        else:
+            self.is_paused = False
+
+    def pause_video(self):
+        self.is_paused = True
 
     def thread_play_video(self):
         if self.video.isOpened():
             is_playing = True
             while is_playing:
-                ret, frame = self.video.read()
-                if ret:
-                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    frame = cv2.resize(frame, (480, 270))
-                    tk_image = PIL.ImageTk.PhotoImage(image=PIL.Image.fromarray(frame))
-                    self.video_canvas.configure(image=tk_image)
-                    self.video_canvas.image = tk_image
+                if not self.is_paused:
+                    ret, frame = self.video.read()
+                    if ret:
+                        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                        frame = cv2.resize(frame, (480, 270))
+                        tk_image = PIL.ImageTk.PhotoImage(image=PIL.Image.fromarray(frame))
+                        self.video_canvas.configure(image=tk_image)
+                        self.video_canvas.image = tk_image
+                    else:
+                        is_playing = False
                 else:
-                    is_playing = False
+                    continue
         
 
 
