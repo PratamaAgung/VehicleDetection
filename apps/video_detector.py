@@ -28,8 +28,8 @@ class Detector(Frame):
 
         self.columnconfigure(2, weight=1)
         self.columnconfigure(3, pad=7)
-        self.rowconfigure(10, weight=1)
-        self.rowconfigure(11, pad=7)
+        self.rowconfigure(11, weight=1)
+        self.rowconfigure(12, pad=7)
 
         path_lbl = Label(self, text="Video Source")
         path_lbl.grid(sticky=W, pady=4, padx=5)
@@ -41,7 +41,7 @@ class Detector(Frame):
         self.set_vid_path_button.grid(row=0, column=2, sticky=W, padx=5)
 
         self.video_area = Label(self, borderwidth=1, relief='ridge')
-        self.video_area.grid(row=1, column=0, columnspan=3, rowspan=10, padx=5, sticky=E+W+S+N)
+        self.video_area.grid(row=1, column=0, columnspan=3, rowspan=11, padx=5, sticky=E+W+S+N)
 
         show_label = Label(self, text="Show")
         show_label.grid(row=1, column=3, sticky=W, columnspan=2)
@@ -80,11 +80,14 @@ class Detector(Frame):
         self.close_btn = Button(self, text="Update", command=self.update_det_area)
         self.close_btn.grid(row=9, column=3, columnspan=2)
 
+        self.fps_label = Label(self, text="FPS = 0")
+        self.fps_label.grid(row=11, column=3, pady=5, columnspan=2)
+
         self.ctrl_btn = Button(self, text="Start", command=self.play_video)
-        self.ctrl_btn.grid(row=11, column=0, padx=5)
+        self.ctrl_btn.grid(row=12, column=0, padx=5)
 
         self.close_btn = Button(self, text="Close", command=self.close)
-        self.close_btn.grid(row=11, column=3, columnspan=2)
+        self.close_btn.grid(row=12, column=3, columnspan=2)
 
     def set_video_path(self):
         file_name = filedialog.askopenfilename()
@@ -165,6 +168,7 @@ class Detector(Frame):
                     curr_fps = curr_fps + 1
                     if accum_time > 1:
                         accum_time = accum_time - 1
+                        self.fps_label.configure(text="FPS = {}".format(curr_fps))
                         last_fps = curr_fps
                         curr_fps = 0
                         count = 0
