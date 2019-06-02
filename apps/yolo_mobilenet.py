@@ -106,7 +106,7 @@ class YOLO(object):
                 score_threshold=self.score, iou_threshold=self.iou)
         return boxes, scores, classes
 
-    def detect_image(self, image):
+    def detect_image(self, image, det_area=(0, 0, 0.9, 1), show_bb=True, show_det_area=True):
         start = timer()
 
         if self.model_image_size != (None, None):
@@ -120,10 +120,10 @@ class YOLO(object):
         image_data = np.array(boxed_image, dtype='float32')
         
         # calculate detection area
-        det_area_top = int(self.detection_area[0] * image.height)
-        det_area_bot = int(self.detection_area[2] * image.height)
-        det_area_left = int(self.detection_area[1] * image.width)
-        det_area_right = int(self.detection_area[3] * image.width)
+        det_area_top = int(det_area[0] * image.height)
+        det_area_bot = int(det_area[2] * image.height)
+        det_area_left = int(det_area[1] * image.width)
+        det_area_right = int(det_area[3] * image.width)
         image_area = image.width * image.height
 
         print(image_data.shape)
@@ -135,7 +135,7 @@ class YOLO(object):
             feed_dict={
                 self.yolo_model.input: image_data,
                 self.input_image_shape: [image.size[1], image.size[0]],
-                K.learning_phase(): 0
+                # K.learning_phase(): 0
             })
 
         print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
@@ -145,13 +145,15 @@ class YOLO(object):
         thickness = (image.size[0] + image.size[1]) // 300
 
         out_tuple = []
+        draw = ImageDraw.Draw(image)
+        if show_det_area:
+            draw.rectangle([det_area_left, det_area_top, det_area_right, det_area_bot], outline=(255, 0, 0))
         for i, c in reversed(list(enumerate(out_classes))):
             predicted_class = self.class_names[c]
             box = out_boxes[i]
             score = out_scores[i]
 
-            label = '{} {:.2f}'.format(predicted_class, score)
-            draw = ImageDraw.Draw(image)
+            label = '{:.2f}'.format(score)
             label_size = draw.textsize(label, font)
 
             top, left, bottom, right = box
@@ -173,7 +175,7 @@ class YOLO(object):
             if bbox_area > image_area / 1750 and bbox_area < image_area * 0.7:
                 bbox_size = True
 
-            if bbox_overlap and  bbox_size:
+            if bbox_overlap and  bbox_size and show_bb:
                 if top - label_size[1] >= 0:
                     text_origin = np.array([left, top - label_size[1]])
                 else:
@@ -188,10 +190,10 @@ class YOLO(object):
                     [tuple(text_origin), tuple(text_origin + label_size)],
                     fill=self.colors[c])
                 draw.text(text_origin, label, fill=(0, 0, 0), font=font)
-                del draw
 
                 out_tuple.append((left, top, right, bottom, c, score))
-
+            
+        del draw
         end = timer()
         print(end - start)
         return image, out_tuple
